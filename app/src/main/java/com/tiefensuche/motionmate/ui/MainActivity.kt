@@ -5,10 +5,14 @@
 package com.tiefensuche.motionmate.ui
 
 import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
 import android.os.ResultReceiver
 import android.text.format.DateUtils
 import android.view.Menu
@@ -23,6 +27,8 @@ import android.widget.CalendarView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -56,12 +62,13 @@ internal class MainActivity : AppCompatActivity() {
     private lateinit var mOverallStepsCard: MotionStatisticsTextItem
     private var mCurrentSteps: Int = 0
     private var mSelectedMonth = Util.calendar
-
+    private val handler = Handler()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Util.applyTheme(PreferenceManager.getDefaultSharedPreferences(this).getString("theme", "system")!!)
         DynamicColors.applyToActivitiesIfAvailable(application)
-
+        createNotificationChannel()
+        scheduleNotifications()//// Schedule the notification with a random delay
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_main)
 
@@ -156,6 +163,52 @@ internal class MainActivity : AppCompatActivity() {
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_main, menu)
         return true
+    }
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = "PictureNotificationChannel"
+            val descriptionText = "Channel for picture notifications"
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val channel = NotificationChannel("picture_notification_channel", name, importance).apply {
+                description = descriptionText
+            }
+            val notificationManager: NotificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
+    private fun scheduleNotifications() {
+        val randomInterval = (20..50).random() *60* 1000L // Random interval between 2 to 5 minutes * 60
+        handler.postDelayed({
+            showNotification()
+            scheduleNotifications() // Reschedule after the notification is shown
+        }, randomInterval)
+    }
+    private fun showNotification() {
+
+        val builder = NotificationCompat.Builder(this, "picture_notification_channel")
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle("Time to take a picture!")
+            .setContentText("Capture a moment during your activity.")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setAutoCancel(true)
+
+        with(NotificationManagerCompat.from(this)) {
+            if (ActivityCompat.checkSelfPermission(
+                    this@MainActivity,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+                return
+            }
+            notify(0, builder.build())
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
