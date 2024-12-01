@@ -55,6 +55,8 @@ internal class MainActivity : AppCompatActivity() {
     private lateinit var mTextViewCalendarContent: TextView
     private lateinit var mCalendarView: CalendarView
     private lateinit var mChart: Chart
+    private var stepCount = 0
+    private var points = 0
     private lateinit var mTextViewChart: TextView
     private var mAdapter: TextItemAdapter = TextItemAdapter()
     private lateinit var mMonthlyStepsCard: MotionStatisticsTextItem
@@ -65,6 +67,8 @@ internal class MainActivity : AppCompatActivity() {
     private val handler = Handler()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        stepCount = 0
+        points = 0
         Util.applyTheme(PreferenceManager.getDefaultSharedPreferences(this).getString("theme", "system")!!)
         DynamicColors.applyToActivitiesIfAvailable(application)
         createNotificationChannel()
@@ -274,6 +278,19 @@ internal class MainActivity : AppCompatActivity() {
         mCurrentSteps = steps
         mTextViewMeters.text = String.format(getString(R.string.meters_today), Util.stepsToMeters(steps))
         mTextViewSteps.text = resources.getQuantityString(R.plurals.steps_text, steps, steps)
+        createNotificationChannel()
+        val notificationManager = ContextCompat.getSystemService(this, NotificationManager::class.java) as NotificationManager
+        val notification = NotificationCompat.Builder(this, "points")
+        .setContentTitle("Points Earned")
+            .setContentText("You have earned $points points!")
+            .setSmallIcon(R.drawable.ic_notification)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .build()
+
+        if (steps % 10 == 0) {
+            points++ // Add 1 point for every 10 steps
+            notificationManager.notify(1, notification)
+        }
 
         // update calendar max date for the case that new day started
         if (!DateUtils.isToday(mCalendarView.maxDate))
