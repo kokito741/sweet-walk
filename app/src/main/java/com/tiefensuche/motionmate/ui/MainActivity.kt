@@ -171,7 +171,7 @@ internal class MainActivity : AppCompatActivity() {
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = "PictureNotificationChannel"
-            val descriptionText = "Channel for picture notifications"
+            val descriptionText = "Channel for picture notifications$points"
             val importance = NotificationManager.IMPORTANCE_DEFAULT
             val channel = NotificationChannel("picture_notification_channel", name, importance).apply {
                 description = descriptionText
@@ -181,7 +181,7 @@ internal class MainActivity : AppCompatActivity() {
         }
     }
     private fun scheduleNotifications() {
-        val randomInterval = (20..50).random() *60* 1000L // Random interval between 2 to 5 minutes * 60
+        val randomInterval = (20..50).random() * 1000L // Random interval between 2 to 5 minutes * 60
         handler.postDelayed({
             showNotification()
             scheduleNotifications() // Reschedule after the notification is shown
@@ -192,7 +192,7 @@ internal class MainActivity : AppCompatActivity() {
         val builder = NotificationCompat.Builder(this, "picture_notification_channel")
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("Time to take a picture!")
-            .setContentText("Capture a moment during your activity.")
+            .setContentText("Capture a moment during your activity. Points : $points")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
 
@@ -279,17 +279,9 @@ internal class MainActivity : AppCompatActivity() {
         mTextViewMeters.text = String.format(getString(R.string.meters_today), Util.stepsToMeters(steps))
         mTextViewSteps.text = resources.getQuantityString(R.plurals.steps_text, steps, steps)
         createNotificationChannel()
-        val notificationManager = ContextCompat.getSystemService(this, NotificationManager::class.java) as NotificationManager
-        val notification = NotificationCompat.Builder(this, "points")
-        .setContentTitle("Points Earned")
-            .setContentText("You have earned $points points!")
-            .setSmallIcon(R.drawable.ic_notification)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .build()
 
         if (steps % 10 == 0) {
             points++ // Add 1 point for every 10 steps
-            notificationManager.notify(1, notification)
         }
 
         // update calendar max date for the case that new day started
